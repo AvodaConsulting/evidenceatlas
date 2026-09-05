@@ -1,4 +1,4 @@
-import { Work, NetworkExpansionResponse, NetworkExpansionOperation, NetworkExpansionCandidate, NetworkExpansionExcludedCandidate } from '../types';
+import { Work, NetworkExpansionResponse, NetworkExpansionOperation, NetworkExpansionCandidate, NetworkExpansionExcludedCandidate, NetworkExpansionDiagnostics } from '../types';
 import { OpenAlexAdapter } from './OpenAlexAdapter';
 import { WorkResolverService } from './WorkResolverService';
 import { SearchCacheService } from './SearchCacheService';
@@ -102,6 +102,10 @@ export class NetworkExpansionService {
     let endpointUsed = '';
     const exactFilters: Record<string, any> = { operation, canonicalId, limit };
 
+    let countLabel = '';
+    let normalizedCount = 0;
+    let fetchedCount = 0;
+
     try {
       if (operation === 'references') {
         // "What this paper cites": references of the selected paper
@@ -110,19 +114,23 @@ export class NetworkExpansionService {
         
         if (!selectedWorkFull) {
           warnings.push(`Selected paper ${canonicalId} could not be retrieved from OpenAlex.`);
+          countLabel = 'OpenAlex does not currently index references for this work.';
         } else {
           const rawRefs = selectedWorkFull.references || [];
           rawCount = rawRefs.length;
 
           if (rawRefs.length === 0) {
-            warnings.push('OpenAlex has no indexed references for this paper. No unrelated search results were substituted.');
+            warnings.push('OpenAlex does not currently index references for this work. No unrelated search results were substituted.');
+            countLabel = 'OpenAlex does not currently index references for this work.';
           } else {
             const canonicalRefIds = rawRefs
               .map(r => WorkResolverService.extractCanonicalOpenAlexId(r))
               .filter((r): r is string => !!r);
             
+            normalizedCount = canonicalRefIds.length;
             const targetIds = canonicalRefIds.slice(0, limit);
             const fetchedWorks = await this.openAlexAdapter.fetchWorksByCanonicalIds(targetIds);
+            fetchedCount = fetchedWorks.length;
 
             const allowedIdSet = new Set(canonicalRefIds);
 
@@ -131,7 +139,10 @@ export class NetworkExpansionService {
               
               if (workOaId && allowedIdSet.has(workOaId)) {
                 candidates.push({
-                  work,
+                  work: {
+                    ...work,
+                    sourceOpenAlexId: canonicalId
+                  },
                   canonicalOpenAlexId: workOaId,
                   title: work.title,
                   relationType: 'references',
@@ -150,6 +161,10 @@ export class NetworkExpansionService {
                 });
               }
             }
+
+            countLabel = candidates.length > 0 
+              ? `Showing ${candidates.length} of ${rawCount} indexed references`
+              : 'OpenAlex does not currently index references for this work.';
           }
         }
       } else if (operation === 'cited_by') {
@@ -157,16 +172,22 @@ export class NetworkExpansionService {
         endpointUsed = `https://api.openalex.org/works?filter=cites:${canonicalId}`;
         const citingWorks = await this.openAlexAdapter.getCitingWorks(canonicalId, limit);
         rawCount = citingWorks.length;
+        fetchedCount = citingWorks.length;
+        normalizedCount = citingWorks.length;
 
         if (citingWorks.length === 0) {
-          warnings.push('OpenAlex has no indexed citing works for this paper. No unrelated search results were substituted.');
+          warnings.push('OpenAlex does not currently index citing works for this paper. No unrelated search results were substituted.');
+          countLabel = 'OpenAlex does not currently index citing works for this paper.';
         } else {
           for (const work of citingWorks) {
             const workOaId = WorkResolverService.extractCanonicalOpenAlexId(work.openAlexId) || WorkResolverService.extractCanonicalOpenAlexId(work.id);
             
             if (workOaId) {
               candidates.push({
-                work,
+                work: {
+                  ...work,
+                  sourceOpenAlexId: canonicalId
+                },
                 canonicalOpenAlexId: workOaId,
                 title: work.title,
                 relationType: 'cited_by',
@@ -185,12 +206,19 @@ export class NetworkExpansionService {
               });
             }
           }
+
+          countLabel = candidates.length > 0
+            ? `Showing ${candidates.length} of ${rawCount} indexed citing papers`
+            : 'OpenAlex does not currently index citing works for this paper.';
         }
       } else if (operation === 'related') {
         // "Related papers": topic/co-citation similarity (NOT a direct citation)
         endpointUsed = `https://api.openalex.org/works/${canonicalId} (related_works)`;
+        countLabel = 'OpenAlex related works — not direct citations';
         const relatedWorks = await this.openAlexAdapter.getRelatedWorks(canonicalId);
         rawCount = relatedWorks.length;
+        fetchedCount = relatedWorks.length;
+        normalizedCount = relatedWorks.length;
 
         if (relatedWorks.length === 0) {
           warnings.push('OpenAlex has no indexed related works for this paper.');
@@ -200,7 +228,10 @@ export class NetworkExpansionService {
             
             if (workOaId) {
               candidates.push({
-                work,
+                work: {
+                  ...work,
+                  sourceOpenAlexId: canonicalId
+                },
                 canonicalOpenAlexId: workOaId,
                 title: work.title,
                 relationType: 'related',
@@ -225,12 +256,27 @@ export class NetworkExpansionService {
       warnings.push(`OpenAlex expansion failed: ${err.message}`);
     }
 
+    const diagnostics: NetworkExpansionDiagnostics = {
+      selectedCanonicalId: canonicalId,
+      selectedRawId: selectedWorkInput.openAlexId || selectedWorkInput.id || null,
+      relationType: operation,
+      source: 'OpenAlex',
+      rawRelationCount: rawCount,
+      normalizedRelationCount: normalizedCount,
+      recordsFetched: fetchedCount,
+      recordsVerified: candidates.length,
+      droppedMissingMetadata: excludedCandidates.length,
+      timestamp: new Date().toISOString()
+    };
+
     const response: NetworkExpansionResponse = {
       selectedWork: selectedWorkMeta,
       operation,
       candidates,
       excludedCandidates,
       warnings,
+      countLabel,
+      diagnostics,
       requestMetadata: {
         provider: 'OpenAlex',
         endpoint: endpointUsed,

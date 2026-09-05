@@ -69,6 +69,7 @@ export interface Work {
   provenance: WorkProvenance;
   fieldLevelProvenance?: Record<string, FieldProvenance>;
   conflicts?: WorkConflict[];
+  sourceOpenAlexId?: string | null;
   isManualOrImportOnly?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -153,6 +154,19 @@ export interface GraphExpansionResult {
 
 export type NetworkExpansionOperation = 'references' | 'cited_by' | 'related';
 
+export interface NetworkExpansionDiagnostics {
+  selectedCanonicalId: string | null;
+  selectedRawId: string | null;
+  relationType: NetworkExpansionOperation;
+  source: string;
+  rawRelationCount: number;
+  normalizedRelationCount: number;
+  recordsFetched: number;
+  recordsVerified: number;
+  droppedMissingMetadata: number;
+  timestamp: string;
+}
+
 export interface NetworkExpansionCandidate {
   work: Work;
   canonicalOpenAlexId: string;
@@ -186,6 +200,8 @@ export interface NetworkExpansionResponse {
   candidates: NetworkExpansionCandidate[];
   excludedCandidates: NetworkExpansionExcludedCandidate[];
   warnings: string[];
+  countLabel?: string;
+  diagnostics?: NetworkExpansionDiagnostics;
   requestMetadata: {
     provider: string;
     endpoint: string;

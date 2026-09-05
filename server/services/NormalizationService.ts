@@ -49,6 +49,16 @@ export class NormalizationService {
   }
 
   /**
+   * Standardizes OpenAlex ID to canonical "W\d+" format
+   * Accepts full URLs, prefixed strings, or bare IDs. Returns uppercase canonical ID or null.
+   */
+  public static normalizeOpenAlexWorkId(value: string | null | undefined): string | null {
+    if (!value) return null;
+    const match = String(value).trim().match(/(?:openalex\.org\/)?(W\d+)/i);
+    return match ? match[1].toUpperCase() : null;
+  }
+
+  /**
    * Standardize title string (removes excess whitespace, control characters)
    */
   public static normalizeTitle(title?: string | null): string {
@@ -99,8 +109,7 @@ export class NormalizationService {
   public static normalizeOpenAlexWork(raw: any, queryId?: string): Work {
     const retrievedAt = new Date().toISOString();
     const cleanDoi = this.normalizeDoi(raw.doi);
-    const rawOaId = raw.id ? raw.id.replace(/^https?:\/\/openalex\.org\/(works\/)?/i, '').replace(/^works\//i, '').trim() : null;
-    const openAlexId = rawOaId && /^W\d+$/i.test(rawOaId) ? rawOaId.toUpperCase() : null;
+    const openAlexId = this.normalizeOpenAlexWorkId(raw.id) || this.normalizeOpenAlexWorkId(raw.openAlexId);
     const workId = cleanDoi ? `doi_${cleanDoi.replace(/[^a-zA-Z0-9]/g, '_')}` : openAlexId || `oa_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
     // Authors
@@ -128,14 +137,7 @@ export class NormalizationService {
     // Normalized references (Canonical OpenAlex IDs)
     const references = Array.isArray(raw.referenced_works)
       ? raw.referenced_works
-          .map((r: string) => {
-            const clean = (typeof r === 'string' ? r : '')
-              .replace(/^https?:\/\/openalex\.org\/(works\/)?/i, '')
-              .replace(/^works\//i, '')
-              .trim()
-              .toUpperCase();
-            return /^W\d+$/.test(clean) ? clean : null;
-          })
+          .map((r: string) => this.normalizeOpenAlexWorkId(r))
           .filter((r): r is string => !!r)
       : [];
 

@@ -16,21 +16,11 @@ export class WorkResolverService {
    * Returns uppercase "W\d+" or null.
    */
   public static extractCanonicalOpenAlexId(raw: string | null | undefined): string | null {
-    if (!raw || typeof raw !== 'string') return null;
-    const trimmed = raw.trim();
-    // Strip URLs or prefixes like "https://openalex.org/", "openalex.org/", "works/", "work:"
-    const cleaned = trimmed
-      .replace(/^https?:\/\/openalex\.org\/(works\/)?/i, '')
-      .replace(/^openalex\.org\/(works\/)?/i, '')
-      .replace(/^works\//i, '')
-      .replace(/^work:/i, '')
-      .trim();
+    return NormalizationService.normalizeOpenAlexWorkId(raw);
+  }
 
-    const match = cleaned.match(/^W\d+$/i);
-    if (match) {
-      return match[0].toUpperCase();
-    }
-    return null;
+  public static normalizeOpenAlexWorkId(raw: string | null | undefined): string | null {
+    return NormalizationService.normalizeOpenAlexWorkId(raw);
   }
 
   /**

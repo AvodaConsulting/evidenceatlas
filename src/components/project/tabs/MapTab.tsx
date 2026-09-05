@@ -25,7 +25,10 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
-  Link2
+  Link2,
+  X,
+  Plus,
+  Check
 } from 'lucide-react';
 import { useApp } from '../../../context/AppContext';
 import { Work, InclusionStatus, ReadStatus, NetworkExpansionOperation, NetworkExpansionResponse } from '../../../types';
@@ -58,6 +61,7 @@ export const MapTab: React.FC = () => {
   const [snapshotSuccess, setSnapshotSuccess] = useState(false);
   const [isExpanding, setIsExpanding] = useState(false);
   const [activeExpansionOp, setActiveExpansionOp] = useState<NetworkExpansionOperation | null>(null);
+  const [expansionResponse, setExpansionResponse] = useState<NetworkExpansionResponse | null>(null);
   const [expansionMsg, setExpansionMsg] = useState<{ text: string; type: 'success' | 'warn' | 'error' } | null>(null);
   const [showSourceDetails, setShowSourceDetails] = useState(false);
 
@@ -333,21 +337,9 @@ export const MapTab: React.FC = () => {
         return;
       }
 
-      // Add only verified candidates into the active project as 'candidate'
-      let addedCount = 0;
-      for (const cand of response.candidates) {
-        if (cand.relationVerified && cand.work) {
-          const alreadyExists = (activeProjectWorksList || []).some(
-            pw => pw.workId === cand.work.id || (cand.work.openAlexId && pw.work?.openAlexId === cand.work.openAlexId)
-          );
-          if (!alreadyExists) {
-            await addWorkToProject(cand.work, { inclusionStatus: 'candidate' });
-            addedCount++;
-          }
-        }
-      }
+      setExpansionResponse(response);
 
-      const countMsg = `${addedCount} new ${operation === 'references' ? 'referenced' : operation === 'cited_by' ? 'citing' : 'related'} works added as candidates.`;
+      const countMsg = response.countLabel || `Found ${response.candidates.length} verified candidate papers.`;
       const hasWarning = response.warnings && response.warnings.length > 0;
       setExpansionMsg({ 
         text: hasWarning ? `${countMsg} (${response.warnings[0]})` : countMsg, 
@@ -772,6 +764,162 @@ export const MapTab: React.FC = () => {
           onClose={() => setEvidenceModalOpen(false)}
           defaultWorkId={selectedProjectWork.workId}
         />
+      )}
+
+      {/* Network Expansion Candidates Modal */}
+      {expansionResponse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-200 bg-slate-50/80 flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    {expansionResponse.operation === 'references' ? 'What this paper cites' :
+                     expansionResponse.operation === 'cited_by' ? 'What cites this paper' : 'Related papers'}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-500 font-mono">
+                    {expansionResponse.countLabel || `${expansionResponse.candidates.length} candidate papers`}
+                  </span>
+                </div>
+                <h3 className="text-sm font-bold font-serif-scholarly text-slate-900 mt-1">
+                  Candidate Papers for "{expansionResponse.selectedWork.title}"
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Canonical OpenAlex: <span className="font-mono font-medium text-slate-700">{expansionResponse.selectedWork.canonicalOpenAlexId}</span>
+                  {expansionResponse.diagnostics && (
+                    <span> • Verified: {expansionResponse.diagnostics.recordsVerified}/{expansionResponse.diagnostics.rawRelationCount}</span>
+                  )}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setExpansionResponse(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Candidate List */}
+            <div className="p-4 overflow-y-auto space-y-3 flex-1">
+              {expansionResponse.warnings && expansionResponse.warnings.length > 0 && (
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>{expansionResponse.warnings[0]}</div>
+                </div>
+              )}
+
+              {expansionResponse.candidates.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 text-xs">
+                  No verified {expansionResponse.operation === 'references' ? 'references' : expansionResponse.operation === 'cited_by' ? 'citations' : 'related works'} found for this paper.
+                </div>
+              ) : (
+                expansionResponse.candidates.map(cand => {
+                  const cWork = cand.work;
+                  const isSavedInProject = (activeProjectWorksList || []).some(
+                    pw => pw.workId === cWork.id || (cWork.openAlexId && pw.work?.openAlexId === cWork.openAlexId)
+                  );
+
+                  return (
+                    <div
+                      key={cWork.id}
+                      className="p-3 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-all flex flex-col justify-between gap-2 shadow-xs"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="text-xs font-bold font-serif-scholarly text-slate-900 leading-snug">
+                            {cWork.title}
+                          </h4>
+                          <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                            {cWork.year || '—'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          {cWork.authors.map(a => a.name).join(', ') || 'Unknown authors'}
+                        </p>
+                        {cWork.venue && (
+                          <p className="text-[10px] text-slate-500 italic mt-0.5">
+                            {cWork.venue}
+                          </p>
+                        )}
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium border ${
+                            cand.relationVerified 
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                              : 'bg-slate-50 text-slate-600 border-slate-200'
+                          }`}>
+                            {cand.reason}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {cWork.citationCount.toLocaleString()} citations
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {cWork.doi && (
+                            <a
+                              href={`https://doi.org/${cWork.doi}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] text-slate-500 hover:text-indigo-600 inline-flex items-center gap-1"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              DOI
+                            </a>
+                          )}
+                          <button
+                            onClick={() => {
+                              setExpansionResponse(null);
+                              openPaperInExplorer(cWork);
+                            }}
+                            className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1"
+                          >
+                            <Compass className="w-3 h-3" />
+                            Explore
+                          </button>
+                        </div>
+
+                        {permissions.canAddWorks && (
+                          isSavedInProject ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-xs font-semibold">
+                              <Check className="w-3 h-3" />
+                              In My Papers
+                            </span>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                await addWorkToProject(cWork, { inclusionStatus: 'candidate' });
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-indigo-600 text-white rounded text-xs font-semibold transition-colors shadow-xs"
+                            >
+                              <Plus className="w-3 h-3" />
+                              Add to My Papers
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
+              <span>Explicit addition: papers are only saved to your project when you click "Add to My Papers".</span>
+              <button
+                onClick={() => setExpansionResponse(null)}
+                className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

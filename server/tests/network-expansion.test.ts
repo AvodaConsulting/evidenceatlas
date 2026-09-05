@@ -308,6 +308,47 @@ async function runNetworkExpansionTests() {
     assert(resBypassed.candidates.length > 0, 'Bypassed result returned candidates');
   }
 
+  // -------------------------------------------------------------
+  // Test 7: Direct Reference Set Verification (Exact User Fixture)
+  // -------------------------------------------------------------
+  console.log('\n--- Test Suite 7: Direct Reference Set Verification (Exact User Fixture) ---');
+  {
+    const selected = {
+      id: "https://openalex.org/W2741809807",
+      referenced_works: [
+        "https://openalex.org/W1560783210",
+        "https://openalex.org/W2017381009"
+      ]
+    };
+
+    const candidates = [
+      { id: "W1560783210" },
+      { id: "https://openalex.org/W2017381009" },
+      { id: "W9999999999" }
+    ];
+
+    const selectedCanonicalId = NormalizationService.normalizeOpenAlexWorkId(selected.id);
+    assert(selectedCanonicalId === 'W2741809807', 'Selected canonical ID is W2741809807');
+
+    const normalizedRefSet = new Set(
+      selected.referenced_works.map(r => NormalizationService.normalizeOpenAlexWorkId(r)).filter((r): r is string => !!r)
+    );
+    assert(normalizedRefSet.has('W1560783210') && normalizedRefSet.has('W2017381009'), 'Normalized reference set contains W1560783210 and W2017381009');
+
+    // Filtering candidates by normalized reference set
+    const verifiedCandidates = candidates.filter(cand => {
+      const candId = NormalizationService.normalizeOpenAlexWorkId(cand.id);
+      return candId && normalizedRefSet.has(candId);
+    });
+
+    assert(verifiedCandidates.length === 2, 'Fixture filtered exactly 2 verified reference candidates (dropped W9999999999)');
+    assert(
+      NormalizationService.normalizeOpenAlexWorkId(verifiedCandidates[0].id) === 'W1560783210' &&
+      NormalizationService.normalizeOpenAlexWorkId(verifiedCandidates[1].id) === 'W2017381009',
+      'Both verified fixture candidates match canonical IDs'
+    );
+  }
+
   console.log('\n====================================================');
   console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================\n');

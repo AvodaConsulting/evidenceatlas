@@ -195,11 +195,11 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
   const getDirectionHeading = () => {
     switch (activeDirection) {
       case 'earlier':
-        return 'Papers this work cites';
+        return 'What this paper cites';
       case 'later':
-        return 'Papers that cite this work';
+        return 'What cites this paper';
       case 'similar':
-        return 'Papers related to this work';
+        return 'Related papers';
       default:
         return 'Explore from this paper';
     }
@@ -208,11 +208,11 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
   const getDirectionSubheading = () => {
     switch (activeDirection) {
       case 'earlier':
-        return 'Foundational literature, methods, and references that this paper builds upon.';
+        return 'Direct outgoing references indexed in the bibliography of this work.';
       case 'later':
-        return 'Subsequent studies, validations, and newer developments that build on this paper.';
+        return 'Direct incoming citations from subsequent papers that cite this work.';
       case 'similar':
-        return 'Work exploring matching research questions through shared citations and concepts.';
+        return 'Semantic or graph-neighbour similarity from OpenAlex; never labeled as direct citations.';
       default:
         return '';
     }
@@ -437,7 +437,7 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
 
         {/* 4. Three Large, Equal, Immediately Visible Action Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {/* Card 1: Earlier work */}
+          {/* Card 1: What this paper cites */}
           <div 
             onClick={() => setActiveDirection('earlier')}
             className={`cursor-pointer rounded-xl border p-5 transition-all flex flex-col justify-between ${
@@ -449,18 +449,18 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                  Direction 1
+                  Outgoing References
                 </span>
                 <Layers className="w-4 h-4 text-indigo-500" />
               </div>
               <h3 className="text-base font-bold text-slate-900">
-                Earlier work
+                What this paper cites
               </h3>
               <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                What this paper cites
+                Direct outgoing references only
               </p>
               <p className="text-[11px] text-slate-400 mt-1.5">
-                Foundational theories, methods, and prior evidence cited in this work.
+                Foundational theories, methods, and prior evidence cited in this work's bibliography.
               </p>
             </div>
 
@@ -472,12 +472,12 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
                   : 'bg-slate-100 text-slate-800 hover:bg-indigo-600 hover:text-white'
               }`}
             >
-              <span>Explore earlier work</span>
+              <span>Explore what this paper cites</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Card 2: Later work */}
+          {/* Card 2: What cites this paper */}
           <div 
             onClick={() => setActiveDirection('later')}
             className={`cursor-pointer rounded-xl border p-5 transition-all flex flex-col justify-between ${
@@ -489,18 +489,18 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                  Direction 2
+                  Incoming Citations
                 </span>
                 <Flame className="w-4 h-4 text-emerald-600" />
               </div>
               <h3 className="text-base font-bold text-slate-900">
-                Later work
+                What cites this paper
               </h3>
               <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                What cites this paper
+                Direct incoming citations only
               </p>
               <p className="text-[11px] text-slate-400 mt-1.5">
-                Subsequent studies, experimental applications, and newer extensions.
+                Subsequent studies, experimental applications, and newer extensions citing this work.
               </p>
             </div>
 
@@ -512,12 +512,12 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
                   : 'bg-slate-100 text-slate-800 hover:bg-emerald-700 hover:text-white'
               }`}
             >
-              <span>Explore later work</span>
+              <span>Explore what cites this paper</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Card 3: Similar papers */}
+          {/* Card 3: Related papers */}
           <div 
             onClick={() => setActiveDirection('similar')}
             className={`cursor-pointer rounded-xl border p-5 transition-all flex flex-col justify-between ${
@@ -529,18 +529,18 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                  Direction 3
+                  Topic & Graph Similarity
                 </span>
                 <Compass className="w-4 h-4 text-blue-600" />
               </div>
               <h3 className="text-base font-bold text-slate-900">
-                Similar papers
+                Related papers
               </h3>
               <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Related by topic and connections
+                Semantic or graph-neighbour similarity; never direct citations
               </p>
               <p className="text-[11px] text-slate-400 mt-1.5">
-                Related papers connected through co-citations and common methodologies.
+                Literature sharing topic embeddings and co-citation neighborhoods on OpenAlex.
               </p>
             </div>
 
@@ -552,7 +552,7 @@ export const PaperExplorer: React.FC<PaperExplorerProps> = ({ work, onBackToSear
                   : 'bg-slate-100 text-slate-800 hover:bg-blue-600 hover:text-white'
               }`}
             >
-              <span>Explore similar papers</span>
+              <span>Explore related papers</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

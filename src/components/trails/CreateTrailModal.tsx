@@ -36,57 +36,57 @@ interface ExplorationModeOption {
 const EXPLORATION_MODES: ExplorationModeOption[] = [
   {
     type: 'earlier_work',
-    label: 'Earlier Work (Foundational References)',
-    shortDesc: 'Trace the direct and indirect works cited by your seed papers',
-    detailedDesc: 'Retrieves prior literature cited directly in the reference lists of your seed works. Essential for establishing provenance, earlier theoretical models, and methodological origins.',
+    label: 'What this paper cites',
+    shortDesc: 'Direct outgoing references only',
+    detailedDesc: 'Retrieves prior literature cited directly in the reference lists of your seed works on OpenAlex. Essential for establishing foundational models and methodological origins.',
     icon: Clock,
     badgeClass: 'bg-blue-50 text-blue-800 border-blue-200'
   },
   {
     type: 'later_work',
-    label: 'Later Work (Forward Citations)',
-    shortDesc: 'Trace papers that cite your seed works after publication',
-    detailedDesc: 'Retrieves downstream research that explicitly cites your seed works. Useful for finding subsequent replications, extensions, empirical validations, and modern advancements.',
+    label: 'What cites this paper',
+    shortDesc: 'Direct incoming citations only',
+    detailedDesc: 'Retrieves downstream research that explicitly cites your seed works on OpenAlex. Useful for finding subsequent replications, extensions, empirical validations, and advancements.',
     icon: ArrowRight,
     badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200'
   },
   {
     type: 'similar_work',
-    label: 'Similar Literature (Co-Citation & Concepts)',
-    shortDesc: 'Discover papers frequently co-cited or sharing core topic concepts',
-    detailedDesc: 'Leverages shared bibliographic co-citation patterns to surface related literature addressing similar problems without relying exclusively on keyword search.',
+    label: 'Related papers',
+    shortDesc: 'Semantic or graph-neighbour similarity; never direct citations',
+    detailedDesc: 'Leverages OpenAlex co-citation and topic similarity patterns to surface related literature. These are similarity neighbors, never direct citations.',
     icon: Sparkles,
     badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200'
   },
   {
     type: 'shared_references',
-    label: 'Shared References (Bibliographic Coupling)',
-    shortDesc: 'Find papers that cite the same foundational literature',
+    label: 'Shared references',
+    shortDesc: 'Papers citing the same foundational bibliography',
     detailedDesc: 'Surfaces contemporaneous papers that draw from the same core bibliographies as your seeds, revealing parallel lines of investigation.',
     icon: Layers,
     badgeClass: 'bg-purple-50 text-purple-800 border-purple-200'
   },
   {
     type: 'common_authors',
-    label: 'Common Authors & Research Labs',
-    shortDesc: 'Trace scholarly output from the same key authors or lab lineage',
+    label: 'Common authors',
+    shortDesc: 'Scholarly output from the same key authors or lab lineage',
     detailedDesc: 'Explores other publications authored by key researchers associated with your seeds to uncover cumulative research programs.',
     icon: Users,
     badgeClass: 'bg-amber-50 text-amber-800 border-amber-200'
   },
   {
     type: 'possible_bridges',
-    label: 'Possible Bridge Papers (Local Graph Connectors)',
-    shortDesc: 'Identify papers that connect separate seed clusters in your project graph',
+    label: 'Possible bridge papers',
+    shortDesc: 'Heuristic connectors between separate seed clusters in local graph',
     detailedDesc: 'Computes topological paths between seed clusters in your project. These are local heuristic bridge suggestions, not global interdisciplinary claims.',
     icon: Network,
     badgeClass: 'bg-teal-50 text-teal-800 border-teal-200'
   },
   {
     type: 'counterevidence',
-    label: 'Counterevidence & Alternative Perspectives',
-    shortDesc: 'Surface potential disputes, contrasting citation contexts, or qualifying studies',
-    detailedDesc: 'Scans for papers citing your seeds with contrasting language, methodological disputes, or divergent conclusions. Surfaces "possible alternative perspectives" requiring human verification before creating any claim challenge.',
+    label: 'Counterevidence & perspectives',
+    shortDesc: 'Contrasting citation contexts or qualifying studies',
+    detailedDesc: 'Scans for papers citing your seeds with contrasting language, methodological disputes, or divergent conclusions.',
     icon: ArrowLeftRight,
     badgeClass: 'bg-rose-50 text-rose-800 border-rose-200'
   }

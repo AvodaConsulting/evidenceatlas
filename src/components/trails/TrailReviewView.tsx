@@ -33,6 +33,21 @@ interface TrailReviewViewProps {
   onSelectTrail?: (trailId: string) => void;
 }
 
+export function formatTrailType(trailType: string | undefined): string {
+  if (!trailType) return 'Trail';
+  const norm = trailType.toLowerCase();
+  if (norm === 'earlier_work' || norm === 'earlier' || norm === 'references') {
+    return 'What this paper cites';
+  }
+  if (norm === 'later_work' || norm === 'later' || norm === 'cited_by') {
+    return 'What cites this paper';
+  }
+  if (norm === 'related_papers' || norm === 'related' || norm === 'similar') {
+    return 'Related papers';
+  }
+  return trailType.replace(/_/g, ' ');
+}
+
 export const TrailReviewView: React.FC<TrailReviewViewProps> = ({ onSelectTrail }) => {
   const { 
     citationTrails, 
@@ -397,7 +412,7 @@ export const TrailReviewView: React.FC<TrailReviewViewProps> = ({ onSelectTrail 
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="capitalize">{(trail.trailType || 'trail').replace('_', ' ')}</span>
+                    <span className="capitalize">{formatTrailType(trail.trailType)}</span>
                     <span>{trail.seedWorkIds?.length || 0} seeds</span>
                   </div>
                 </div>
@@ -454,7 +469,7 @@ export const TrailReviewView: React.FC<TrailReviewViewProps> = ({ onSelectTrail 
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
-                      {(selectedTrail.trailType || 'trail').replace('_', ' ')}
+                      {formatTrailType(selectedTrail.trailType)}
                     </span>
                     {selectedTrail.isPinned && (
                       <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold">
