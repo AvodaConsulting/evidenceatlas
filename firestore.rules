@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function getWorkspaceMember(workspaceId, userId) {
+      return get(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(userId)).data;
+    }
+
+    function isWorkspaceMember(workspaceId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/workspaces/$(workspaceId)/members/$(request.auth.uid));
+    }
+
+    function isWorkspaceOwner(workspaceId) {
+      return isWorkspaceMember(workspaceId) && getWorkspaceMember(workspaceId, request.auth.uid).role == 'owner';
+    }
+
+    function isWorkspaceEditorOrAbove(workspaceId) {
+      return isWorkspaceMember(workspaceId) && (
+        getWorkspaceMember(workspaceId, request.auth.uid).role == 'owner' ||
+        getWorkspaceMember(workspaceId, request.auth.uid).role == 'editor'
+      );
+    }
+
+    function isWorkspaceCommenterOrAbove(workspaceId) {
+      return isWorkspaceMember(workspaceId) && (
+        getWorkspaceMember(workspaceId, request.auth.uid).role == 'owner' ||
+        getWorkspaceMember(workspaceId, request.auth.uid).role == 'editor' ||
+        getWorkspaceMember(workspaceId, request.auth.uid).role == 'commenter'
+      );
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create, update: if isOwner(userId) && request.resource.data.id == userId;
+      allow delete: if false;
+    }
+
+    // Workspaces Collection
+    match /workspaces/{workspaceId} {
+      allow get: if isWorkspaceMember(workspaceId);
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isWorkspaceOwner(workspaceId);
+      allow delete: if isWorkspaceOwner(workspaceId);
+
+      // Workspace Members subcollection
+      match /members/{memberId} {
+        allow get, list: if isWorkspaceMember(workspaceId);
+        allow create, update, delete: if isWorkspaceOwner(workspaceId);
+      }
+    }
+
+    // Projects Collection
+    match /projects/{projectId} {
+      allow get: if isWorkspaceMember(resource.data.workspaceId);
+      allow list: if isSignedIn();
+      allow create: if isWorkspaceEditorOrAbove(request.resource.data.workspaceId);
+      allow update: if isWorkspaceEditorOrAbove(resource.data.workspaceId);
+      allow delete: if isWorkspaceOwner(resource.data.workspaceId);
+
+      // ProjectWorks subcollection
+      match /projectWorks/{projectWorkId} {
+        allow get, list: if isWorkspaceMember(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow create, update, delete: if isWorkspaceEditorOrAbove(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+      }
+
+      // Annotations subcollection
+      match /annotations/{annotationId} {
+        allow get, list: if isWorkspaceMember(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow create: if isWorkspaceCommenterOrAbove(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId) && request.resource.data.userId == request.auth.uid;
+        allow update: if isWorkspaceCommenterOrAbove(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId) && resource.data.userId == request.auth.uid;
+        allow delete: if (isWorkspaceEditorOrAbove(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId) || resource.data.userId == request.auth.uid);
+      }
+
+      // Tags subcollection
+      match /tags/{tagId} {
+        allow get, list: if isWorkspaceMember(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow create, update, delete: if isWorkspaceEditorOrAbove(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+      }
+
+      // Searches subcollection
+      match /searches/{searchId} {
+        allow get, list: if isWorkspaceMember(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow create: if isWorkspaceEditorOrAbove(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow update, delete: if isWorkspaceOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+      }
+
+      // MapSnapshots subcollection
+      match /mapSnapshots/{snapshotId} {
+        allow get, list: if isWorkspaceMember(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow create: if isWorkspaceEditorOrAbove(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow update, delete: if isWorkspaceOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+      }
+
+      // EvidenceRecords subcollection
+      match /evidenceRecords/{evidenceId} {
+        allow get, list: if isWorkspaceMember(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow create, update: if isWorkspaceEditorOrAbove(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+        allow delete: if isWorkspaceOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.workspaceId);
+      }
+    }
+
+    // Normalized Works Collection (Shared read-only or authorized editor insert)
+    match /works/{workId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if false; // Immutable scholarly records
+    }
+
+    // Audit Events (Append-only by members, readable by workspace owner)
+    match /auditEvents/{eventId} {
+      allow create: if isSignedIn();
+      allow get, list: if isWorkspaceOwner(resource.data.workspaceId);
+      allow update, delete: if false; // Strictly immutable
+    }
+  }
+}

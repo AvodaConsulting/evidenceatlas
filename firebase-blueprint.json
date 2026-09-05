@@ -1,0 +1,249 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered researcher user account profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 200 },
+        "avatarUrl": { "type": "string", "maxLength": 1000 },
+        "affiliation": { "type": "string", "maxLength": 500 },
+        "orcid": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Collaborative research laboratory container",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "isPrivate": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "ownerId", "isPrivate", "createdAt", "updatedAt"]
+    },
+    "WorkspaceMember": {
+      "title": "WorkspaceMember",
+      "description": "Membership and role association for a workspace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "workspaceId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userEmail": { "type": "string", "maxLength": 256 },
+        "userName": { "type": "string", "maxLength": 200 },
+        "role": { "type": "string", "enum": ["owner", "editor", "commenter", "viewer"] },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "invitedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "workspaceId", "userId", "role", "joinedAt"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A specific academic literature synthesis inquiry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "workspaceId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 300 },
+        "researchQuestion": { "type": "string", "maxLength": 1000 },
+        "discipline": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 3000 },
+        "isPrivate": { "type": "boolean" },
+        "createdBy": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["active", "archived"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "title", "researchQuestion", "createdBy", "createdAt"]
+    },
+    "Work": {
+      "title": "Work",
+      "description": "Normalized scholarly Work domain record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "doi": { "type": "string", "maxLength": 256 },
+        "openAlexId": { "type": "string", "maxLength": 128 },
+        "semanticScholarId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 1000 },
+        "year": { "type": "number" },
+        "type": { "type": "string" },
+        "citationCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "year", "type"]
+    },
+    "ProjectWork": {
+      "title": "ProjectWork",
+      "description": "Work inclusion and review state within a project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "workId": { "type": "string", "maxLength": 128 },
+        "readStatus": { "type": "string", "enum": ["unread", "reading", "completed"] },
+        "inclusionStatus": { "type": "string", "enum": ["candidate", "included", "excluded"] },
+        "personalNotes": { "type": "string", "maxLength": 5000 },
+        "addedBy": { "type": "string", "maxLength": 128 },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "workId", "readStatus", "inclusionStatus", "addedBy"]
+    },
+    "Annotation": {
+      "title": "Annotation",
+      "description": "Passage quotation and researcher critique on a work",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "workId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 200 },
+        "text": { "type": "string", "maxLength": 4000 },
+        "quoteText": { "type": "string", "maxLength": 4000 },
+        "claimType": { "type": "string", "enum": ["support", "contradict", "methodological", "contextual", "author_inference"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "workId", "userId", "text", "claimType", "createdAt"]
+    },
+    "Tag": {
+      "title": "Tag",
+      "description": "Project categorization tag",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "color": { "type": "string", "maxLength": 30 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "name", "color"]
+    },
+    "SearchLog": {
+      "title": "SearchLog",
+      "description": "Audit record of literature search executions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "queryText": { "type": "string", "maxLength": 1000 },
+        "candidateCount": { "type": "number" },
+        "executedBy": { "type": "string", "maxLength": 128 },
+        "executedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "queryText", "candidateCount", "executedBy", "executedAt"]
+    },
+    "MapSnapshot": {
+      "title": "MapSnapshot",
+      "description": "Persisted state and visual layout of citation network",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "layoutType": { "type": "string" },
+        "nodeCount": { "type": "number" },
+        "edgeCount": { "type": "number" },
+        "elementsJson": { "type": "string" },
+        "createdBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "title", "layoutType", "createdBy", "createdAt"]
+    },
+    "EvidenceRecord": {
+      "title": "EvidenceRecord",
+      "description": "Claim-evidence matrix item with verification status and support strength",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "workId": { "type": "string", "maxLength": 128 },
+        "claimStatement": { "type": "string", "maxLength": 2000 },
+        "supportStrength": { "type": "string", "enum": ["strong", "moderate", "weak", "contested"] },
+        "verbatimPassage": { "type": "string", "maxLength": 10000 },
+        "pageOrSection": { "type": "string", "maxLength": 200 },
+        "verificationStatus": { "type": "string", "enum": ["verified", "verify_before_citing", "needs_source", "author_inference"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "workId", "claimStatement", "supportStrength", "verbatimPassage", "verificationStatus"]
+    },
+    "AuditEvent": {
+      "title": "AuditEvent",
+      "description": "Immutable security log of destructive and administrative actions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "workspaceId": { "type": "string", "maxLength": 128 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "actorId": { "type": "string", "maxLength": 128 },
+        "actorEmail": { "type": "string", "maxLength": 256 },
+        "action": { "type": "string", "maxLength": 100 },
+        "targetType": { "type": "string" },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "isDestructive": { "type": "boolean" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "workspaceId", "actorId", "action", "targetType", "targetId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Top-level workspace collections"
+    },
+    "/workspaces/{workspaceId}/members/{memberId}": {
+      "schema": "WorkspaceMember",
+      "description": "Workspace member roles"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Academic literature projects"
+    },
+    "/works/{workId}": {
+      "schema": "Work",
+      "description": "Global normalized works cache"
+    },
+    "/projects/{projectId}/projectWorks/{projectWorkId}": {
+      "schema": "ProjectWork",
+      "description": "Works included in a specific project"
+    },
+    "/projects/{projectId}/annotations/{annotationId}": {
+      "schema": "Annotation",
+      "description": "Collaborative researcher annotations"
+    },
+    "/projects/{projectId}/tags/{tagId}": {
+      "schema": "Tag",
+      "description": "Project categorization tags"
+    },
+    "/projects/{projectId}/searches/{searchId}": {
+      "schema": "SearchLog",
+      "description": "Logged search queries"
+    },
+    "/projects/{projectId}/mapSnapshots/{snapshotId}": {
+      "schema": "MapSnapshot",
+      "description": "Saved citation graph states"
+    },
+    "/projects/{projectId}/evidenceRecords/{evidenceId}": {
+      "schema": "EvidenceRecord",
+      "description": "Ground truth claim-evidence links"
+    },
+    "/auditEvents/{eventId}": {
+      "schema": "AuditEvent",
+      "description": "Immutable audit events"
+    }
+  }
+}

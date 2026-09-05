@@ -1,0 +1,6 @@
+{
+  "name": "Evidence Atlas",
+  "description": "Calm, research-backed academic literature discovery, citation network mapping, evidence verification, and collaborative research workspaces.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
